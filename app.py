@@ -22,7 +22,7 @@ with st.sidebar:
     rent = st.number_input("Rent / Housing:", min_value=0.0, value=4000.0, step=100.0)
     food = st.number_input("Food / Groceries:", min_value=0.0, value=3000.0, step=100.0)
     transport = st.number_input("Transportation:", min_value=0.0, value=1000.0, step=50.0)
-    others = st.number_input("Other Expenses:", min_value=0.0, value=2000.0, step=100.0)
+    other_expenses = st.number_input("Other Expenses:", min_value=0.0, value=2000.0, step=100.0)
     
     st.markdown("---")
     target_goal = st.text_input("Do you have a specific financial goal?", placeholder="e.g., Buy a laptop for 35,000 EGP")
@@ -32,8 +32,9 @@ with st.sidebar:
 # ==========================================
 # 3. Basic Calculations & Charts
 # ==========================================
-total_expenses = rent + food + transport + others
+total_expenses = rent + food + transport + other_expenses
 balance = income - total_expenses
+expense_ratio = (total_expenses / income) if income > 0 else None
 
 col1, col2 = st.columns([1, 1])
 
@@ -41,6 +42,10 @@ with col1:
     st.subheader("Account Summary")
     st.info(f"💵 **Total Income:** {income:,.0f} EGP")
     st.warning(f"📉 **Total Expenses:** {total_expenses:,.0f} EGP")
+    if expense_ratio is None:
+        st.error("⚠️ Expense ratio cannot be calculated because income is 0.")
+    else:
+        st.info(f"📌 **Expense-to-Income Ratio:** {expense_ratio:.1%}")
     
     if balance > 0:
         st.success(f"💰 **Remaining Balance (Surplus):** {balance:,.0f} EGP")
@@ -51,7 +56,7 @@ with col2:
     st.subheader("Expenses Breakdown")
     df = pd.DataFrame({
         "Category": ["Housing", "Food", "Transport", "Others"],
-        "Amount": [rent, food, transport, others]
+        "Amount": [rent, food, transport, other_expenses]
     })
     st.dataframe(df, use_container_width=True)
 
@@ -83,8 +88,9 @@ if run_button:
         ("human", """
         Income: {income}
         Total Expenses: {total_expenses}
+        Expense Ratio: {expense_ratio}
         Balance: {balance}
-        Details: Housing {rent}, Food {food}, Transport {transport}, Others {others}.
+        Details: Housing {rent}, Food {food}, Transport {transport}, Others {other_expenses}.
         Financial Goal: {target_goal}
         """)
     ])
@@ -96,11 +102,12 @@ if run_button:
             response = chain.invoke({
                 "income": income,
                 "total_expenses": total_expenses,
+                "expense_ratio": f"{expense_ratio:.1%}" if expense_ratio is not None else "N/A (income is 0)",
                 "balance": balance,
                 "rent": rent,
                 "food": food,
                 "transport": transport,
-                "others": others,
+                "other_expenses": other_expenses,
                 "target_goal": target_goal if target_goal else "No specific goal mentioned."
             })
             
